@@ -3,6 +3,7 @@ This is a repository with all the programs need to make for a course of InformaÃ
 
 
 # Requirements
--> openCV 
--> AudioFile https://github.com/adamstark/AudioFile
--> sound/image/video samples
+- openCV 
+- libsndfile (https://github.com/libsndfile/libsndfile
+- sound/image/video samples from elearning
+
