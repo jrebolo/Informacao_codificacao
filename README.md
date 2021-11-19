@@ -1,5 +1,5 @@
-# Informacao_codificacao
-This is a repository with all the programs need to make for a course of Informação e Codificação
+# Informação codificação
+This is a repository contains the code for the course of Informação e Codificação
 
 
 # Requirements
