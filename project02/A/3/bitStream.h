@@ -3,8 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <fstream>
-
-#define BUFFERSIZE 1024
+#include <math.h> 
 
 /*
 https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit/47990#47990
@@ -12,7 +11,7 @@ https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-sing
 setting a bit:             number |= 1UL << n
 Clearing a bit:            number &= ~(1UL << n)
 Toggling a bit:            number ^= 1UL << n
-Checking a bit:            bit = (number << n) & 1U
+Checking a bit:            bit = (number >> n) & 1U
 Changing the nth bit to x: number ^= (-x ^number) & (1UL << n)
 
 This program can reads binary files and stores it in a unsigend char array with a size of maximum of 1024
@@ -21,80 +20,143 @@ This program can reads binary files and stores it in a unsigend char array with 
 
 */
 
-class BitStream{
+class BitStream {
   private:
-    typedef std::vector<uint8_t> v_bytes;
-    v_bytes buffer;
-    uint8_t pointer = 0;
-    const char* filename;
-    const char type;
-    std::ifstream input;
-    std::ofstream output;
+    std::ofstream ofs;
+    std::ifstream ifs;
+    std::vector<uint8_t> buffer;
+    int pointer = 0;
+    uint8_t bit = 0;
+    int bit_pointer = 7;
   public:
-
-    BitStream(const char* filename,const char type){
-      this->filename = filename;
-      this->type = type;
-      if (type == 'r') this->input(filename,std::ios::binary);
-      if (type == 'w') this->output(filename,std::ios::binary);
+    BitStream(){}
+    BitStream(char* filename,char condition){
+      if (condition == 'r')
+        this->ifs.open(filename,std::ios::binary);
+      else if (condition == 'w')
+        this->ofs.open(filename, std::ios::binary);
+      this->bit_pointer = 7;
+    }
+    BitStream(char* filename1, char* filename2){
+      this->ifs.open(filename1, std::ios::binary);
+      this->ofs.open(filename2, std::ios::binary);
     }
     ~BitStream(){
-      if (input.is_open())  input.close;
-      if (output.is_open()) output.close;
+      this->ofs.close();
+      this->ifs.close();
     }
-  
-    void readToBuffer();
+    void setBit();
+    void movePointer();
+    template<typename T>
+    bool readByte(T v,uint8_t i);
+    void printBit(uint8_t v);
+    void write();
+    void write2Buffer(uint8_t v);
     void flush();
+    void close(char condition);
+    std::vector<uint8_t> getBuffer();
+    void writeBit(uint8_t v);
+    void open(char *filename,char condition);
     template <typename T>
-    bool readBit(const T data, const uint32_t i); 
-    template <typename T>
-    T readBits(const T data,const uint32_t i, const uint32_t n);
-
-    template <typename  T>
-    void writeBit(T *data,const uint32_t i,const bool bit);
-    template <typename T>
-    void writeBits(T *data, const uint8_t i, const uint8_t n,const bool bit);
-    
+    T read(T buffer);
+    uint8_t getBitPointer();
 };
 
-void BitStream::readToBuffer(){
-  char byte;
-  if (input.get(byte)) this->buffer.push_back(byte);
+uint8_t BitStream::getBitPointer(){
+  return this->bit_pointer;
 }
 
-void BitStream::flush(){}
-
-template <typename T>
-bool BitStream::readBit(const T data,const uint32_t i){
-  if (this->pointer == 0) this->readToBuffer();
-  if ((this->pointer) == this->buffer.size() * 8) this->flush();
-  return data & (1 << i);//(data >> i%8) & 1;
+std::vector<uint8_t> BitStream::getBuffer(){
+  return this->buffer;
 }
 
-template <typename T>
-T BitStream::readBits(const T data,const uint32_t i, const uint32_t n){
-  uint32_t tmp = 0;
-  bool tmp2;
-  uint32_t ii;
-  for(ii = i;ii < n;ii++){
-    tmp2 = this->readBit(data,ii);
-    this->writeBit(&tmp,ii,tmp2);
+void BitStream::open(char * filename,char condition){
+  if (condition == 'r')
+    this->ifs.open(filename,std::ios::binary);
+  else if (condition == 'w')
+    this->ofs.open(filename, std::ios::binary);
+
+
+}
+
+void BitStream::movePointer(){
+  if (this->bit_pointer < 0) {
+    this->write2Buffer(this->bit);
+    this->bit_pointer = 7;
+    this->bit = 0;
   }
-  return tmp;
+  else this->bit_pointer--;
+}
+
+void BitStream::setBit(){
+  /// set a bit value to 1 in the index i
+  if (this->bit_pointer < 0){
+    this->bit = 0;
+    this->bit_pointer = 7;
+  }
+  this->bit |= 1 << this->bit_pointer;
+  this->bit_pointer--;
+}
+// é preciso ter em conta que só lê valores até 256
+template <typename T>
+bool BitStream::readByte(T v, uint8_t i){
+  /// read the value of a byte in a bit of index i
+  return (v >> i) & 1;
+}
+
+
+void BitStream::printBit(uint8_t v){
+  int i;
+  for(i=7;i>=0;i--){
+    if (this->readByte(v,i)) printf("1");
+    else                     printf("0");
+  }
+  printf("\n");
 }
 
 template <typename T>
-void BitStream::writeBit(T *data,const uint32_t i,const bool bit){
-  if (bit == 1)
-    *data |= 1UL << i;
-  else if (bit == 0)
-    *data &= ~(1UL << i);
+void BitStream::writeNBits(T data, uint8_t n){
+  int i;
+  for (i=n; i >= 0;i--){
+    if (this->readByte(data,i)) this->setBit();
+    else                        this->movePointer();
+  }
 }
+
+void BitStream::writeBit(uint8_t v){
+  int i;
+  for(i=7;i>=0;i--){
+    if (this->readByte(v,i)) this->setBit();
+    else                     this->movePointer();
+  }
+  
+}
+
+void BitStream::write(){
+  this->write2Buffer(this->bit);
+  int i;
+  for(i = 0; i < this->buffer.size();i++)
+    this->ofs << buffer[i];
+  this->flush();
+}
+
+void BitStream::write2Buffer(uint8_t v){
+  (this->buffer).push_back(v);
+  (this->pointer)++;
+}
+
+void BitStream::flush(){
+  (this->buffer).clear();
+  this->pointer = 0;
+}
+
 template <typename T>
-void BitStream::writeBits(T *data, const uint8_t i, const uint8_t n,const bool bit){
-  int ii;
-  for(ii=i; ii < n; ii++)
-    this->writeBit(data,ii,bit);
+T BitStream::read(T buffer){
+  /// give one buffer to read from file the same size of buffer
+  return this->ifs.read(&buffer,sizeof(T));
 }
 
-
+void BitStream::close(char condition){
+  if (condition == 'w')      this->ofs.close();
+  else if (condition == 'r') this->ifs.close();
+}

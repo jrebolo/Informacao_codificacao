@@ -1,39 +1,80 @@
 #pragma once
 #include "bitStream.h"
+#include <iostream>
+#include <math.h>
+
+#define LOG2(x) (std::log((x))/std::log(2))
 
 class Golomb{
   public:
-    uint32_t m;
-    uint32_t q;
-    uint32_t r;
+    int m;
+    char *filename_out;
     BitStream bs;
-    Golomb(uint32_t m){
-      this->m = m; 
+    Golomb(char* filename_out,uint32_t m){
+      this->filename_out = filename_out;
+      this->m = m;
+      this->bs.open(filename_out,'w');
     }
     ~Golomb(){}
+    
     template <typename T>
-    void encode(T n);
-    template <typename T>
-    T decode(T tmp);
+    void encode(T data,bool end=0);
+    void decode();
 };
-template <typename T>
-void Golomb::encode(T n){
-  T tmp = 0;
-  uint32_t q = n/(this->m);
-  printf("q: %d\n",q);
-  this->bs.writeBits(&tmp,0,q,1);
-  this->q = this->bs.readBits(tmp,0,32);
-  this->r = n-q*(this->m);
-}
 
 template <typename T>
-T Golomb::decode(T tmp){
-  int cnt=0;
-  int i;
-  for(i=0;i < sizeof(tmp)*8;i++){
-    if (this->bs.readBit(this->q,i))
-      cnt++;
+void Golomb::encode(T data,bool end){
+  printf("%d\n",this->bs.getBitPointer());
+  int q = data / (this->m);
+  int r = data % (this->m);
+  std::cout << "q: " <<q << " r: " << r << std::endl; 
+  /// primeiro tratamento do sinal
+  uint8_t signal = 0;
+  if (q < 0){
+    signal = 1;
+    q = -1*q;
+    r = -1*r;
   }
-  return cnt*(this->m)+(this->r);
+  
+  /// escrever o codigo unario
+   
+  int cnt,i;
+  uint8_t bit = 0;
+    
+  for (cnt = 0;cnt < q ;cnt++){
+    /// set bits to q bits to 1
+    this->bs.setBit();
+  }
+  /// write 0 to end unary code
+  this->bs.movePointer();
+
+  /// write signal
+  if (signal) this->bs.setBit();
+  else        this->bs.movePointer();
+  
+  // writeNbits criar
+
+  /// write binary code
+  this->bs.writeNBits(r,LOG2(this->m)/1); 
+  
+  if (end) {
+    int i;
+    std::vector<uint8_t> b = this->bs.getBuffer();
+    for (i = 0; i < b.size();i++){
+      std::cout << b[i] << std::endl;
+    }
+    this->bs.write();
+    this->bs.close('w');
+  }
+} 
+
+
+
+void Golomb::decode(){
+
+  
+
 }
+
+
 
