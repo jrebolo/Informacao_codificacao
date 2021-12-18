@@ -30,7 +30,8 @@ int main(int argc, char* argv[]){
     else gb.encode(val);
     i++;
   }
-
+  printf("-------\n"); 
+  gb.decode("test.out",4);
 
   return 0;
 }
