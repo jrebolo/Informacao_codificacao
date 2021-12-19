@@ -22,14 +22,13 @@ This program can reads binary files and stores it in a unsigend char array with 
 */
 
 class BitStream {
-  private:
+  public:
     std::ofstream ofs;
     std::ifstream ifs;
     std::vector<uint8_t> buffer;
     int pointer = 0;
     uint8_t byte = 0;
     int byte_pointer = 7;
-  public:
     BitStream(){}
     BitStream(char* filename,char condition){
       if (condition == 'r')
@@ -63,17 +62,20 @@ class BitStream {
     template <typename T>
     void read(T *buffer);
     uint8_t getBitPointer();
-    std::vector<uint8_t> writeFromFile2Buffer();
+    void readFromFile2Buffer();
     void writeBit2Val(bool bit);
     void printBuffer();
     uint8_t getByte();
     uint8_t getByteFromBuffer();
+    void decreasePointer();
+    int getUnary();
+    bool readSignal();
+    bool readBitDecode();
+    int readNBits(int n);
+    int getBufferSize();
+
 };
 
-uint8_t BitStream::getByteFromBuffer(){
-
-  return this->buffer[this->buffer.size()-1];
-}
 
 uint8_t BitStream::getBitPointer(){
   return this->byte_pointer;
@@ -155,13 +157,14 @@ void BitStream::write2Buffer(uint8_t v){
   (this->pointer)++;
 }
 
-std::vector<uint8_t> BitStream::writeFromFile2Buffer(){
+void BitStream::readFromFile2Buffer(){
   char c;
   int i;
   while(this->ifs.get(c)){
     this->buffer.push_back(c);
   }
-  return this->buffer;
+  this->byte = buffer[0];
+  this->buffer.erase(this->buffer.begin());
 }
 
 void BitStream::writeBit2Val(bool bit){
@@ -200,4 +203,60 @@ void BitStream::close(char condition){
 
 uint8_t BitStream::getByte(){
   return this->byte; 
+}
+
+int BitStream::getUnary(){
+  int cnt = 0;
+  bool bit = this->readBit(this->byte,this->byte_pointer);
+  this->decreasePointer();
+  while(bit){
+    bit = this->readBit(this->byte,this->byte_pointer);
+    this->decreasePointer();
+    cnt += 1;
+  }
+  return cnt;
+}
+
+
+uint8_t BitStream::getByteFromBuffer(){
+  if (this->buffer.size() > 0){
+    uint8_t byte = this->buffer[0];
+    this->buffer.erase(this->buffer.begin());
+    return byte;
+  }
+  else return 0;
+}
+void BitStream::decreasePointer(){
+  if (this->byte_pointer - 1 < 0){
+    this->byte_pointer = 7;
+    this->byte = this->getByteFromBuffer();
+  }
+  else this->byte_pointer--;
+
+}
+
+bool BitStream::readSignal(){
+  bool bit = this->readBit(this->byte,this->byte_pointer);
+  this->decreasePointer();
+  return bit;
+}
+bool BitStream::readBitDecode(){
+  bool bit = this->readBit(this->byte,this->byte_pointer);
+  this->decreasePointer();
+  return bit;
+}
+
+int BitStream::readNBits(int n){
+  int i;
+  int cnt = 0;
+  bool bit;
+  for(i=n-1;i >= 0;i--){
+    bit = readBitDecode();
+    cnt += bit*pow(2,i);
+  }
+  return cnt;
+}
+
+int BitStream::getBufferSize(){
+  return this->buffer.size();
 }
