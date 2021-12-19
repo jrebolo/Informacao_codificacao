@@ -52,11 +52,9 @@ void Golomb::encode(T data,bool end){
   if (signal) this->bs.setBit();
   else        this->bs.movePointer();
   
-
   /// write binary code
-  //int n = std::ceil(LOG2(r))/1;
-  
-  this->bs.writeNBits(r,8); 
+  int n = LOG2(this->m-1)/1 + 1;
+  this->bs.writeNBits(r,n); 
   if (end) {
     this->bs.write2File();
     this->bs.close('w');
@@ -79,12 +77,15 @@ void Golomb::decode(char* filename,int m){
 
   bs.printBuffer();
   printf("\n");
+  
+  
   while(bs.getBufferSize() > 0){
     q = bs.getUnary();
     // encontar sinal
     signal = bs.readSignal();
     // encontrar r 
-    r = bs.readNBits(8);
+    int n = LOG2(this->m-1)/1 + 1;
+    r = bs.readNBits(n);
     if (signal) val = -1*(q*m+r);
     else        val = q*m +r;
 

@@ -22,12 +22,12 @@ int main(int argc, char* argv[]){
 
   std::ifstream ifs("test.in");
   int val;
-  int i = 0 ;
+  int file_size = 5 ;
+  int i = 1;
   while (ifs >> val) {
     //std::cout << val << std::endl;
-    if (i == 4)
-      gb.encode(val,1); 
-    else gb.encode(val);
+    if (i == file_size) gb.encode(val,1); 
+    else                gb.encode(val);
     i++;
   }
   printf("-------\n"); 
