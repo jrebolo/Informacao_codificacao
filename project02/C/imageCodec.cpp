@@ -60,7 +60,7 @@ int predictor(int a, int b, int c) {
     }
 }
 
-void predictorJPEG(Mat matrix){
+void predictorJPEG(Mat matrix, Mat &predict){
     int a,b,c;
     for(int i = 0; i < matrix.size().height; i++){
         for(int j = 0; j < matrix.size().width; j++){
@@ -82,7 +82,7 @@ void predictorJPEG(Mat matrix){
 
             int pixelAtual = matrix.at<uchar>(i,j);
 
-            .at<uchar>(i,j) = pixelAtual - previsao;
+            predict.at<uchar>(i,j) = pixelAtual - previsao;
         }
     }
 }
@@ -120,9 +120,10 @@ int main(int argc, char* argv[]){
     /* imshow("y component",y);
     imshow("u component",u);
     imshow("v component",v); */
-
     
+
 
 
     return EXIT_SUCCESS;
 }
+
