@@ -6,7 +6,7 @@ int main(int argc, char* argv[]){
   printf("------------\n"); 
 
   Golomb gb(5);
-  std::ifstream ifs("buff.txt");
+  std::ifstream ifs("test.in");
   int val;
   while (ifs >> val) {
     //std::cout << val << std::endl;
