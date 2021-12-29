@@ -31,7 +31,6 @@ template <typename T>
 void Golomb::encode(T data){
   int q = data / (this->m);
   int r = data % (this->m);
-  printf("q:%d r:%d\n",q,r);
   /// primeiro tratamento do sinal
   uint8_t signal = 0;
   if (r < 0 || q < 0){
@@ -85,14 +84,7 @@ void Golomb::decode(std::string filename){
     else        val = q*(this->m) +r;
     this->bs.decoded_values.push_back(val);
   }
-    if (bs.byte != 0){
-    q = bs.getUnary();
-    signal = bs.readEncodeBuffer();
-    r = bs.readNBits(n);
-    if (signal) val = -1*(q*(this->m)+r);
-    else        val = q*(this->m) +r;
-    this->bs.decoded_values.push_back(val);
-    }
+
 }
 
 
