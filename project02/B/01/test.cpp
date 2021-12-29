@@ -3,7 +3,7 @@
 int main(int argc, char* argv[]){
   
 
-  AudioCodec ac(256);
+  AudioCodec ac(1000);
   
   if(ac.open(argv[1])){
     std::cout << "Error Opening audio file" << std::endl;
