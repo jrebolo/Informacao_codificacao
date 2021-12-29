@@ -110,6 +110,7 @@ void BitStream::write2File(std::string filename,char mode){
     this->ofs.open(filename, std::ios::binary);
     if (this->byte_pointer != 7) this->buffer.push_back(this->byte);
     int i;
+    
     for(i = 0; i < this->buffer.size();i++)
       this->ofs << buffer[i];
     this->flush();
@@ -118,8 +119,7 @@ void BitStream::write2File(std::string filename,char mode){
     this->ofs.open(filename);
     int i;
     for (i = 0; i < this->decoded_values.size(); i++){
-      printf("%d\n",this->decoded_values[i]);
-      this->ofs << this->decoded_values[i]; 
+      this->ofs << this->decoded_values[i] << std::endl; 
     }
   }
 }
@@ -192,7 +192,7 @@ bool BitStream::readEncodeBuffer(){
     this->byte_pointer = 7;
   }
   else
-    this->movePointer();
+    this->byte_pointer -= 1;
   return bit;
 }
 
