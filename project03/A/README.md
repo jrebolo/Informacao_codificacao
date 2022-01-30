@@ -1,7 +1,7 @@
 ## How to compile
 
 ```c++
-g++ -std=c++17 -o2 main.cpp -o a.out
+g++ -std=c++17 -o2 fcm.cpp -o a.out
 ```
 
 ## USAGE

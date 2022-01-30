@@ -89,11 +89,13 @@ int Fcm::save_text(){
   std::string txt; 
   char ch; 
   int i;
-  while (this->ifs >> std::noskipws  >> ch) {
+  while (this->ifs.get(ch)) {
+    if (ch < 32) continue;
     this->text.push_back(ch);
     this->word_count += 1;
   }
   this->get_alphabet();
+  this->close();
   return 0;
 }
 
@@ -103,10 +105,12 @@ void Fcm::get_alphabet(){
   std::map<char,int> alpha;
   std::string alphabet = "";
   int i;
+  char ch;
   for(i=0;i<this->word_count;i++){
-    if (alpha.count(this->text[i]) == 0){
-      alphabet += this->text[i];
-      alpha[this->text[i]] = 1;
+    ch = this->text[i];
+    if (alpha.count(ch) == 0){
+      alphabet += ch;
+      alpha[ch] = 1;
     }
   }
   this->alfabeto = alphabet;
@@ -121,7 +125,6 @@ void Fcm::get_alphabet(){
 }
 
 int Fcm::count_depth(int k,double alpha){
-  
 
   if (this->text.size() == 0){
     std::cout << "NO TEXT TO READ" << "\n";
@@ -132,28 +135,32 @@ int Fcm::count_depth(int k,double alpha){
     std::cout << "Not ENOUGH WORD FOR DIMENSION K" << "\n"; 
     return -1;
   }
- 
-  std::vector<char> buffer(k);
+  std::vector<char> buffer;
   int i,j;
-  if (k != 1){
-    for(i=0 ; i < k;i++){
-      buffer[i] = this->text[i];
-    }
+
+  /// buffer the word until the kth char
+  for(i=0 ; i < k;i++){
+    buffer.push_back(this->text[i]);
   }
+
   char ch;
   int index;
-  double counter = 0.0;
+  
   for(i=k; i < this->text.size(); i++){
     
+    /// retrive one char from the text
     ch = this->text[i];
+
+    /// find ch index in the alphabet
     index = this->char_to_index(ch);
+  
     if (index == -1){ 
       std::cout << "CHAR NOT FOUND ch: " << ch << "\n";
       return -1;
     }
-    counter += 1.0;
+    /// take the word in the buffer and verify is it exist in the matrix and if so update its values else add a internal vector
     std::string word = get_word_from_buffer(buffer);
-    if (this->matrix[word.c_str()].size() == 0){
+    if (this->matrix.count(word.c_str()) == 0){
       std::vector<double> tmp;
       std::copy(this->internal_vector.begin(), this->internal_vector.end(), std::back_inserter(tmp));
       tmp[index] += 1.0;
@@ -163,31 +170,30 @@ int Fcm::count_depth(int k,double alpha){
     else{
       this->matrix[word.c_str()][index] += 1.0; 
       this->matrix[word.c_str()][this->alfabeto_size] += 1.0;
-    
     }
-    if (k != 1){
-      for(j = 0; j < k - 1; j++)
-        buffer[j] = buffer[j+1];
-      buffer[k-1] = ch;
-    } 
+
+    /// update buffer  [a,b,c,d] -> [b,c,d,e]
+    for(j = 0; j < k-1; j++)
+      buffer[j] = buffer[j+1];
+    buffer[k-1] = ch;
+
   }
   
+  /// after read all the text its time to update prob of each transition and entropy
   std::map<std::string, std::vector<double>>::iterator it = this->matrix.begin();
   std::string word;
   int cnt;
-  while (it != this->matrix.end())
-  {
+  while (it != this->matrix.end()){
     cnt = 0;
     word = it->first;
     // (occurrences + alpha) / (total + (ALPHABET_LENGTH*alpha)))
     for(i = 0; i < this->alfabeto_size; i++){
-      this->matrix[word][i] = (this->matrix[word][i] + alpha) / (this->matrix[word][this->alfabeto_size] + (this->alfabeto_size*alpha));
-      this->matrix[word][this->alfabeto_size+1] -= this->matrix[word][i] * LOG2(this->matrix[word][i]);
+      this->matrix[word][i] = (this->matrix[word][i] + alpha) / (this->matrix[word][this->alfabeto_size] + (this->alfabeto_size*alpha)); // prob
+      this->matrix[word][this->alfabeto_size+1] -= this->matrix[word][i] * LOG2(this->matrix[word][i]); // entropy
     }
-    this->matrix[word][this->alfabeto_size+2] += ((double)this->matrix[word][this->alfabeto_size] / counter) * this->matrix[word][alfabeto_size+1];
+    this->matrix[word][this->alfabeto_size+2] += ((double)this->matrix[word][this->alfabeto_size] / (double)this->word_count) * this->matrix[word][alfabeto_size+1]; // model entropy
     it++;
   }
-
 
   return 0;
 }
